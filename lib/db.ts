@@ -1,3 +1,4 @@
+import { getConnectionString } from "@netlify/database";
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
 
 declare global {
@@ -6,8 +7,12 @@ declare global {
 }
 
 function createPool() {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) throw new Error("DATABASE_URL is not set");
+  // DATABASE_URL (any Postgres) wins; otherwise use the Netlify Database provisioned for this site.
+  let connectionString = process.env.DATABASE_URL || process.env.NETLIFY_DB_URL;
+  if (!connectionString) {
+    try { connectionString = getConnectionString(); } catch { /* not on Netlify */ }
+  }
+  if (!connectionString) throw new Error("No database configured: set DATABASE_URL, or deploy on Netlify with Netlify Database");
   const needsSsl = !/localhost|127\.0\.0\.1/.test(connectionString) && !/sslmode=disable/.test(connectionString);
   return new Pool({
     connectionString,

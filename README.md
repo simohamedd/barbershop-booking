@@ -6,7 +6,7 @@ A complete booking website and back office for a barbershop:
 - **Barber dashboard** with each barber's own calendar, booking requests to approve or reject, notes, completed/no-show, and their own hours and days off.
 - **Admin dashboard** with a central calendar, all appointments with filters, manual bookings for WhatsApp, phone and walk-ins, barbers, services, customers, working hours, booking rules and statistics.
 
-Built with **Next.js 15 (App Router) + PostgreSQL**. It deploys to Netlify (or Vercel) with a managed Postgres such as Neon, Supabase or Netlify DB.
+Built with **Next.js 15 (App Router) + PostgreSQL**. On Netlify it uses **Netlify Database** (managed Postgres, provisioned and migrated automatically); anywhere else, point `DATABASE_URL` at any Postgres 14+.
 
 ---
 
@@ -33,7 +33,7 @@ This is enforced in three layers, so it holds even if two customers press "Book"
 
 1. **One set of rules for every booking.** Online bookings, WhatsApp, phone and walk-in bookings, reschedules and reassignments all go through `lib/booking.ts`, which validates against `lib/availability.ts`. The rules are: working hours ∩ shop opening hours, minus breaks, minus days off and blocked time, minus existing **Pending** and **Confirmed** bookings. They use the service's real duration plus the admin-configured buffer.
 2. **Inside a database transaction.** Expired pending holds are released first, then the time is re-checked and the row inserted.
-3. **A PostgreSQL exclusion constraint** (`no_overlapping_appointments` in `db/migrations/001_init.sql`):
+3. **A PostgreSQL exclusion constraint** (`no_overlapping_appointments` in `netlify/database/migrations/20261020000000_init.sql`):
 
    ```sql
    EXCLUDE USING gist (barber_id WITH =, tstzrange(start_at, block_end_at, '[)') WITH &&)
@@ -96,15 +96,19 @@ To reset the sample data: `npm run db:seed -- --force --demo` (this wipes appoin
 
 ## 2. Create the first admin account
 
-On a fresh (production) database, after `npm run db:migrate`:
+**On a live site (easiest):** open `https://<your-site>/setup`. Enter the setup key (the `SETUP_TOKEN` environment variable), your name, email and a password, and optionally tick *Add sample barbers, services and opening hours*. You're signed straight into the admin dashboard.
+
+The page only works while no admin exists. After that it redirects to `/login`, so nobody else can use it. You can delete `SETUP_TOKEN` from your environment variables once you're in.
+
+**From a terminal (local or any database you can reach):**
 
 ```bash
-DATABASE_URL="<your production connection string>" npm run create-admin -- owner@yourshop.co.uk "Your Name"
+DATABASE_URL="<connection string>" npm run create-admin -- owner@yourshop.co.uk "Your Name"
 ```
 
 You'll be asked for a password (at least 10 characters, with letters and a number). Running it again for the same email resets that password, which is useful if you're locked out.
 
-Then sign in at `/login`. Admins can add more admins later in **Settings → Admins**.
+Admins can add more admins later in **Settings → Admins**.
 
 ---
 
@@ -149,40 +153,29 @@ Barbers can only see and act on **their own** appointments. They can't open the 
 
 ## 5. Deploy to Netlify
 
-### a. Create the database
+The repository is set up for Netlify with **Netlify Database**: no separate database account, connection string or migration step.
 
-Any of these work. Copy the **pooled** connection string.
-
-- **Neon** (https://neon.tech): create a project, then copy the pooled connection string (the host contains `-pooler`).
-- **Netlify DB** (built on Neon): run `npx netlify db init` in the project.
-- **Supabase**: Project settings → Database → connection pooling string.
-
-Then apply the schema and create your admin from your computer:
-
-```bash
-DATABASE_URL="postgres://...pooled...?sslmode=require" npm run db:migrate
-DATABASE_URL="postgres://...pooled...?sslmode=require" npm run create-admin -- you@yourshop.co.uk "Your Name"
-# optional sample barbers/services (no demo logins):
-DATABASE_URL="postgres://...?sslmode=require" npm run db:seed
-```
-
-### b. Create the site
-
-1. Push this folder to a GitHub repository.
-2. In Netlify: **Add new site → Import an existing project →** pick the repo. Netlify reads `netlify.toml` and detects Next.js automatically.
-3. Under **Site configuration → Environment variables**, add:
-   - `DATABASE_URL`: the pooled connection string
-   - `APP_URL`: your site URL, e.g. `https://brassandblade.netlify.app` (update it if you add a custom domain)
+1. In Netlify, create a project from the GitHub repository (**Add new project → Import an existing project**), or link an existing project to it under **Project configuration → Build & deploy → Continuous deployment**. Netlify reads `netlify.toml` and detects Next.js.
+2. Add these environment variables (**Project configuration → Environment variables**):
+   - `APP_URL`: the site URL, e.g. `https://your-shop.netlify.app` (update it if you add a custom domain)
    - `APP_SECRET`: output of `openssl rand -base64 32`
    - `CRON_SECRET`: output of `openssl rand -hex 24`
+   - `SETUP_TOKEN`: any long random string, used once at `/setup`
    - optionally the email and WhatsApp variables (see below)
-4. Deploy. The build runs `npm run db:migrate` first, so future schema changes apply automatically.
+3. Deploy. Because the project depends on `@netlify/database`, Netlify provisions a Postgres database for the site and applies everything in `netlify/database/migrations/` before publishing. A failed migration blocks the publish, so a broken schema never goes live.
+4. Open `/setup` to create your admin account (section 2).
 
-The scheduled function `netlify/functions/expire-pending.mts` runs every 5 minutes to release unapproved requests and notify customers. It shows under **Logs → Functions** once deployed.
+From then on, every push to `main` redeploys. Each deploy preview gets its own copy of the database, so tests on a preview never touch live bookings. Note that preview links are public, and those copies include real customer details.
+
+The scheduled function `netlify/functions/expire-pending.mts` runs every 5 minutes to release unapproved requests and notify customers. It shows under **Logs → Functions**.
+
+**Schema changes:** add a new file to `netlify/database/migrations/` with a later timestamp prefix. Never edit or delete a migration that has already been applied, because Netlify rejects the deploy.
+
+**Using your own Postgres instead** (Neon, Supabase, RDS…): set `DATABASE_URL` to its pooled connection string. It takes priority over Netlify Database. Then run `npm run db:migrate` against it yourself before deploying.
 
 ### Vercel or another host
 
-It works anywhere Next.js runs. Set the same environment variables, run `npm run db:migrate` before or at deploy, and call `POST /api/cron/expire` with the header `Authorization: Bearer <CRON_SECRET>` every few minutes (e.g. Vercel Cron, or any cron service).
+It works anywhere Next.js runs. Set the same environment variables plus `DATABASE_URL`, run `npm run db:migrate` before or at deploy, and call `POST /api/cron/expire` with the header `Authorization: Bearer <CRON_SECRET>` every few minutes (e.g. Vercel Cron, or any cron service).
 
 ---
 
@@ -275,7 +268,7 @@ lib/
   booking.ts           create / approve / reject / cancel / reschedule (transactional)
   notify.ts            in-app, email and WhatsApp notifications with honest delivery logging
   auth.ts              sessions and role checks
-db/migrations/         SQL schema (incl. the exclusion constraint)
+netlify/database/migrations/  SQL schema (incl. the exclusion constraint), applied automatically on Netlify
 scripts/               migrate, seed, create-admin
 tests/                 engine tests (node:test) and end-to-end browser tests (Playwright)
 netlify/functions/     scheduled expiry job

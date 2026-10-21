@@ -3,6 +3,7 @@ import { Wordmark } from "@/components/ui";
 import { getUser } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 import { LoginForm } from "./LoginForm";
+import { needsSetup } from "../setup/actions";
 
 export const metadata = { title: "Staff login", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const u = await getUser();
   if (u) redirect(u.role === "ADMIN" ? "/admin" : "/barber");
+  if (await needsSetup()) redirect("/setup");
   const [s, sp] = await Promise.all([getSettings(), searchParams]);
   return (
     <div className="grid min-h-screen bg-ink lg:grid-cols-2">

@@ -33,8 +33,11 @@ async function cleanup() {
   await q(`DELETE FROM services WHERE name LIKE 'ZZTEST%'`);
 }
 
+let savedBuffer = 0;
 before(async () => {
   await cleanup();
+  savedBuffer = (await getSettings()).buffer_minutes;
+  await q(`UPDATE shop_settings SET buffer_minutes = 5 WHERE id = 1`);
   const s = await getSettings();
   zone = s.timezone;
   // A weekday at least 5 days ahead (inside the booking horizon, past minimum notice)
@@ -58,6 +61,7 @@ before(async () => {
 
 after(async () => {
   await cleanup();
+  await q(`UPDATE shop_settings SET buffer_minutes = $1 WHERE id = 1`, [savedBuffer]);
   await pool().end();
 });
 
@@ -81,7 +85,7 @@ describe("required scenarios", () => {
 
   test("buffer time is respected (10:30 refused, 10:35 allowed with 5-min buffer)", async () => {
     const s = await getSettings();
-    assert.equal(s.buffer_minutes, 5, "seed sets a 5 minute buffer");
+    assert.equal(s.buffer_minutes, 5, "test sets a 5 minute buffer");
     await assert.rejects(online(A, "10:30"));
     const ok = await online(A, "10:35");
     assert.ok(ok.id);

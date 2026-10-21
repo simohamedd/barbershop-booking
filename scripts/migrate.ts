@@ -1,4 +1,8 @@
-/* Applies SQL files in db/migrations in order, once each. Usage: npm run db:migrate */
+/*
+ * Applies SQL files in netlify/database/migrations in order, once each. Usage: npm run db:migrate
+ * Use this for local development or an external Postgres (DATABASE_URL). On Netlify with
+ * Netlify Database, deploys apply these same files automatically.
+ */
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { pool } from "../lib/db";
@@ -6,7 +10,7 @@ import { pool } from "../lib/db";
 async function main() {
   const db = pool();
   await db.query(`CREATE TABLE IF NOT EXISTS schema_migrations (name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())`);
-  const dir = join(process.cwd(), "db", "migrations");
+  const dir = join(process.cwd(), "netlify", "database", "migrations");
   const files = readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
   const done = new Set((await db.query(`SELECT name FROM schema_migrations`)).rows.map((r) => r.name));
   for (const f of files) {

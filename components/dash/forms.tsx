@@ -1,11 +1,13 @@
 "use client";
-import { useActionState, useCallback, useEffect, useRef } from "react";
+import { createContext, startTransition, useActionState, useCallback, useContext, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "./Toaster";
 
 export type ActionResult = { ok?: string; error?: string; issues?: { code: string; message: string }[] } | null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Act = (prev: any, fd: FormData) => Promise<ActionResult>;
+
+const PendingCtx = createContext<boolean | null>(null);
 
 export function ActionForm({ action, children, className, resetOnOk = false }: { action: Act; children: React.ReactNode; className?: string; resetOnOk?: boolean }) {
   // Success goes to a toast (the form may unmount once the page refreshes); errors stay inline.
@@ -14,14 +16,21 @@ export function ActionForm({ action, children, className, resetOnOk = false }: {
     if (r?.ok) toast(r.ok);
     return r;
   }, [action]);
-  const [state, run] = useActionState(wrapped, null);
+  const [state, run, pending] = useActionState(wrapped, null);
   const ref = useRef<HTMLFormElement>(null);
   useEffect(() => { if (resetOnOk && state?.ok) ref.current?.reset(); }, [state, resetOnOk]);
   return (
-    <form ref={ref} action={run} className={className}>
-      {children}
-      {state?.error && <Result state={state} />}
-    </form>
+    // Submitting via onSubmit (not the form action prop) stops React clearing what was typed when the server returns an error.
+    <PendingCtx.Provider value={pending}>
+      <form ref={ref} className={className} onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        startTransition(() => run(fd));
+      }}>
+        {children}
+        {state?.error && <Result state={state} />}
+      </form>
+    </PendingCtx.Provider>
   );
 }
 
@@ -38,7 +47,9 @@ export function Result({ state }: { state: ActionResult }) {
 }
 
 export function Submit({ children, className = "btn-dark", pendingText, confirm }: { children: React.ReactNode; className?: string; pendingText?: string; confirm?: string }) {
-  const { pending } = useFormStatus();
+  const ctx = useContext(PendingCtx);
+  const { pending: formPending } = useFormStatus();
+  const pending = ctx ?? formPending;
   return (
     <button
       className={className}

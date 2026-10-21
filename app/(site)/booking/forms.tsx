@@ -11,14 +11,14 @@ function Msg({ s }: { s: FormState }) {
 export function LookupForm() {
   const [state, action, pending] = useActionState(findBooking, null);
   return (
-    <form action={action} className="space-y-5">
+    <form key={JSON.stringify(state)} action={action} className="space-y-5">
       <div>
         <label className="label" htmlFor="ref">Booking reference</label>
-        <input id="ref" name="ref" className="field uppercase tracking-wide" placeholder="BK-7KQ3MP" required autoComplete="off" />
+        <input id="ref" name="ref" className="field uppercase tracking-wide" placeholder="BK-7KQ3MP" required autoComplete="off" defaultValue={state?.values?.ref} />
       </div>
       <div>
         <label className="label" htmlFor="phone">Mobile number</label>
-        <input id="phone" name="phone" type="tel" className="field" required autoComplete="tel" />
+        <input id="phone" name="phone" type="tel" className="field" required autoComplete="tel" defaultValue={state?.values?.phone} />
       </div>
       <button className="btn-dark w-full" disabled={pending}>{pending ? "Checking…" : "Find booking"}</button>
       <Msg s={state} />
@@ -39,10 +39,10 @@ export function ManageForms({ reference, token, canCancel, cutoffNote }: { refer
       </div>
       {!canCancel && <p className="text-sm text-smoke">{cutoffNote}</p>}
       {mode === "change" && (
-        <form action={resched} className="rounded-lg border border-line p-4">
+        <form key={JSON.stringify(rState)} action={resched} className="rounded-lg border border-line p-4">
           <input type="hidden" name="ref" value={reference} /><input type="hidden" name="t" value={token} />
           <label className="label" htmlFor="note">Which days or times suit you?</label>
-          <textarea id="note" name="note" rows={3} className="field" maxLength={500} required placeholder="e.g. Any weekday after 5pm" />
+          <textarea id="note" name="note" rows={3} className="field" maxLength={500} required placeholder="e.g. Any weekday after 5pm" defaultValue={rState?.values?.note} />
           <button className="btn-dark mt-3" disabled={rPending}>{rPending ? "Sending…" : "Send request"}</button>
           <Msg s={rState} />
         </form>
