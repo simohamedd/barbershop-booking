@@ -1,6 +1,6 @@
 [build]
-  # Netlify Database applies netlify/database/migrations automatically before publishing.
-  command = "npm run build"
+  # Applies new files in db/migrations to DATABASE_URL, then builds. A failed migration fails the deploy.
+  command = "npm run db:migrate && npm run build"
   publish = ".next"
 
 [build.environment]
