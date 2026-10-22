@@ -145,7 +145,7 @@ Barbers can only see and act on **their own** appointments. They can't open the 
 | Online cancellation closes | 2 h | Customers can cancel online until this point |
 | Accept online bookings | On | Pause online booking (staff can still add bookings) |
 
-- **Settings → Shop details:** name, address, phone, WhatsApp number (shown as a chat link), map link, homepage photo, logo, time zone and currency.
+- **Settings → Shop details:** name, tagline (the big homepage headline), about text, address, phone, WhatsApp number (shown as a chat link), map link, homepage photo, gallery photos (one link per line), the year the shop opened, logo, time zone and currency. Until you add your own photos, the site uses free-licence barbershop photos from Unsplash, credited in the footer.
 
 **Time zones:** all moments are stored in UTC (`timestamptz`). Weekly hours are wall-clock times in the shop's time zone (default `Europe/London`), so clock changes are handled correctly.
 

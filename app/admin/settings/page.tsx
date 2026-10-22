@@ -57,7 +57,9 @@ export default async function Settings() {
             <F name="email" label="Email" def={s.email} />
             <F name="whatsapp_number" label="WhatsApp number" def={s.whatsapp_number} hint="Shown on the website as a chat link." />
             <F name="maps_url" label="Google Maps link" def={s.maps_url} />
-            <F name="hero_image_url" label="Homepage photo link" def={s.hero_image_url} wide hint="An https:// image link, shown behind the homepage heading." />
+            <F name="hero_image_url" label="Homepage photo link" def={s.hero_image_url} wide hint="An https:// image link shown behind the homepage heading. Leave empty to use the built-in barbershop photo." />
+            <div className="sm:col-span-2"><label className="label" htmlFor="s-gallery">Gallery photos</label><textarea id="s-gallery" name="gallery_urls" rows={4} defaultValue={s.gallery_urls} className="field font-mono text-xs" placeholder="https://… (one link per line, up to 9)" /><p className="hint">Photos of your shop and your work, shown on the homepage. Leave empty to use built-in photos. Tip: upload to Instagram, Google Photos or any image host and paste the direct image links.</p></div>
+            <F name="established_year" label="Year the shop opened" def={s.established_year ?? ""} hint="Optional. Shown on the homepage as “Est. 2014”." inputMode="numeric" maxLength={4} />
             <F name="logo_url" label="Logo link" def={s.logo_url} hint="Optional square logo (https://)." />
             <F name="timezone" label="Time zone" def={s.timezone} hint="IANA name, e.g. Europe/London. All times use this zone." />
             <F name="currency" label="Currency" def={s.currency} maxLength={3} />

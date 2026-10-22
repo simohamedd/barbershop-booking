@@ -39,15 +39,15 @@ export function StatusBadge({ status }: { status: string }) {
 
 export const SOURCE_LABEL: Record<string, string> = { ONLINE: "Online", WHATSAPP: "WhatsApp", PHONE: "Phone", WALK_IN: "Walk-in", ADMIN: "Admin" };
 
-export function Wordmark({ name, logo, light = false, href = "/" }: { name: string; logo?: string; light?: boolean; href?: string }) {
+export function Wordmark({ name, logo, light = false, href = "/", caps = false }: { name: string; logo?: string; light?: boolean; href?: string; caps?: boolean }) {
   return (
     <Link href={href} className={`flex items-center gap-2.5 ${light ? "text-white" : "text-ink"}`}>
       {logo ? <img src={logo} alt="" className="h-8 w-8 object-contain" /> : (
-        <svg viewBox="0 0 24 24" className="h-6 w-6 text-brass" aria-hidden>
+        <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0 text-brass" aria-hidden>
           <path fill="currentColor" d="M6 3a3 3 0 1 0 2.24 5l2.66 2.66-6.4 6.4a1 1 0 1 0 1.42 1.41l6.4-6.4 6.4 6.4a1 1 0 0 0 1.42-1.41l-6.4-6.4L16.4 8a3 3 0 1 0-1.42-1.42L12.32 9.24 9.66 6.58A3 3 0 0 0 6 3Zm0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm12 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z" />
         </svg>
       )}
-      <span className="display text-xl leading-none">{name}</span>
+      <span className={caps ? "wordmark text-[17px] leading-none" : "display text-xl leading-none"}>{name}</span>
     </Link>
   );
 }

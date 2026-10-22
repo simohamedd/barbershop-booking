@@ -218,15 +218,18 @@ const SettingsForm = z.object({
   logo_url: z.string().trim().max(1000).refine((v) => !v || /^https:\/\//.test(v), "Logo link must start with https://"),
   timezone: z.string().trim().refine((tz) => { try { new Intl.DateTimeFormat("en", { timeZone: tz }); return true; } catch { return false; } }, "Unknown time zone"),
   currency: z.string().trim().regex(/^[A-Z]{3}$/, "Currency must be a 3-letter code like GBP"),
+  gallery_urls: z.string().max(5000).refine((v) => v.split(/\r?\n/).map((x) => x.trim()).filter(Boolean).every((x) => /^https:\/\/\S+$/.test(x)), "Each gallery photo must be an https:// link on its own line"),
+  established_year: z.string().trim().refine((v) => !v || (/^\d{4}$/.test(v) && +v >= 1800 && +v <= new Date().getFullYear()), "Enter the year the shop opened, e.g. 2014"),
 });
 
 export async function saveShopSettings(_: R, fd: FormData): Promise<R> {
   await requireAdmin();
-  const p = SettingsForm.safeParse(Object.fromEntries(Object.keys(SettingsForm.shape).map((k) => [k, str(fd, k)])));
+  const p = SettingsForm.safeParse(Object.fromEntries(Object.keys(SettingsForm.shape).map((k) => [k, k === "gallery_urls" ? String(fd.get(k) ?? "") : str(fd, k)])));
   if (!p.success) return { error: p.error.issues[0].message };
   const d = p.data;
-  await q(`UPDATE shop_settings SET shop_name=$1, tagline=$2, about=$3, address=$4, phone=$5, email=$6, whatsapp_number=$7, maps_url=$8, hero_image_url=$9, logo_url=$10, timezone=$11, currency=$12, updated_at=now() WHERE id=1`,
-    [d.shop_name, d.tagline, d.about, d.address, d.phone, d.email, d.whatsapp_number, d.maps_url, d.hero_image_url, d.logo_url, d.timezone, d.currency]);
+  const gallery = d.gallery_urls.split(/\r?\n/).map((x) => x.trim()).filter(Boolean).slice(0, 9).join("\n");
+  await q(`UPDATE shop_settings SET shop_name=$1, tagline=$2, about=$3, address=$4, phone=$5, email=$6, whatsapp_number=$7, maps_url=$8, hero_image_url=$9, logo_url=$10, timezone=$11, currency=$12, gallery_urls=$13, established_year=$14, updated_at=now() WHERE id=1`,
+    [d.shop_name, d.tagline, d.about, d.address, d.phone, d.email, d.whatsapp_number, d.maps_url, d.hero_image_url, d.logo_url, d.timezone, d.currency, gallery, d.established_year ? Number(d.established_year) : null]);
   refresh();
   return { ok: "Shop details saved." };
 }

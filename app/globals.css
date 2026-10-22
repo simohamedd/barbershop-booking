@@ -16,9 +16,20 @@
 @layer components {
   .wrap { @apply mx-auto w-full max-w-6xl px-4 sm:px-6; }
   .display { @apply font-display font-semibold tracking-tight; font-optical-sizing: auto; }
+  .wordmark { @apply font-display font-semibold uppercase; letter-spacing: 0.14em; }
+
+  /* Public site: a fine gold rule with a centred ornament, used to open each major section */
+  .rule-gold { @apply flex items-center gap-4 text-brass; }
+  .rule-gold::before, .rule-gold::after { content: ""; @apply h-px flex-1 bg-current opacity-60; }
+  .leader { @apply mb-1.5 flex-1 border-b border-dotted; }
+
+  .photo { @apply h-full w-full object-cover grayscale-[35%] transition duration-700 ease-out; }
+  .group:hover .photo { @apply grayscale-0 scale-[1.03]; }
+  @media (prefers-reduced-motion: reduce) { .group:hover .photo { transform: none; } }
 
   .btn { @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50; }
   .btn-gold { @apply btn bg-brass text-ink hover:bg-brass-light; }
+  .btn-lg { @apply px-7 py-3.5 text-base; }
   .btn-dark { @apply btn bg-ink text-white hover:bg-char-3; }
   .btn-line { @apply btn border border-line bg-white text-ink hover:border-ink; }
   .btn-line-dark { @apply btn border border-white/25 text-white hover:border-brass hover:text-brass-light; }

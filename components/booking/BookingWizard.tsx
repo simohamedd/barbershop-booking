@@ -129,8 +129,8 @@ export function BookingWizard(props: {
   }
 
   return (
-    <div className="wrap py-8 sm:py-12">
-      <ol className="mb-8 flex gap-1 sm:gap-2" aria-label="Booking steps">
+    <div className="wrap py-10 sm:py-14">
+      <ol className="mb-10 flex gap-1 sm:gap-3" aria-label="Booking steps">
         {STEPS.map((label, i) => {
           const done = i < step;
           const reachable = i <= step;
@@ -141,7 +141,7 @@ export function BookingWizard(props: {
                 disabled={!reachable}
                 onClick={() => reachable && go(i)}
                 aria-current={i === step ? "step" : undefined}
-                className={`w-full border-t-2 pt-2 text-left text-xs sm:text-sm ${i === step ? "border-brass font-semibold text-ink" : done ? "border-ink text-ink" : "border-line text-smoke"}`}
+                className={`w-full border-t-2 pt-3 text-left text-xs sm:text-sm ${i === step ? "border-brass font-medium text-ink" : done ? "border-ink text-ink" : "border-line text-smoke"}`}
               >
                 <span className="tabular-nums">{i + 1}.</span> <span className={i === step ? "" : "hidden sm:inline"}>{label}</span>
               </button>
@@ -158,8 +158,8 @@ export function BookingWizard(props: {
 
           {step === 0 && (
             <>
-              <h1 ref={headingRef} tabIndex={-1} className="display text-3xl outline-none sm:text-4xl">What are you having done?</h1>
-              <ul className="mt-6 divide-y divide-line border-y border-line">
+              <h1 ref={headingRef} tabIndex={-1} className="display text-4xl outline-none sm:text-5xl">What are you having done?</h1>
+              <ul className="mt-8 divide-y divide-line border-y border-line">
                 {services.map((s) => (
                   <li key={s.id}>
                     <button
@@ -169,13 +169,13 @@ export function BookingWizard(props: {
                         const keepBarber = barberId === "any" || barbers.find((b) => b.id === barberId)?.service_ids.includes(s.id);
                         go(barberId && keepBarber ? 2 : 1);
                       }}
-                      className={`flex w-full items-center gap-4 px-1 py-4 text-left hover:bg-mist ${s.id === serviceId ? "bg-mist" : ""}`}
+                      className={`group flex w-full items-center gap-4 px-3 py-5 text-left transition-colors hover:bg-ivory ${s.id === serviceId ? "bg-ivory" : ""}`}
                     >
                       <span className="flex-1">
-                        <span className="block text-lg font-semibold">{s.name}</span>
+                        <span className="display block text-[22px]">{s.name}</span>
                         <span className="block text-sm text-smoke">{dur(s.duration_min)}{s.description ? `. ${s.description}` : ""}</span>
                       </span>
-                      <span className="display text-xl text-brass-dark">{money(s.price_pence, currency)}</span>
+                      <span className="display text-2xl text-brass-dark">{money(s.price_pence, currency)}</span>
                     </button>
                   </li>
                 ))}
@@ -185,7 +185,7 @@ export function BookingWizard(props: {
 
           {step === 1 && service && (
             <>
-              <h1 ref={headingRef} tabIndex={-1} className="display text-3xl outline-none sm:text-4xl">Who would you like?</h1>
+              <h1 ref={headingRef} tabIndex={-1} className="display text-4xl outline-none sm:text-5xl">Who would you like?</h1>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <BarberOption
                   selected={barberId === "any"}
@@ -236,7 +236,7 @@ export function BookingWizard(props: {
 
           {step === 3 && service && start && (
             <form onSubmit={submit} noValidate={false}>
-              <h1 ref={headingRef} tabIndex={-1} className="display text-3xl outline-none sm:text-4xl">Your details</h1>
+              <h1 ref={headingRef} tabIndex={-1} className="display text-4xl outline-none sm:text-5xl">Your details</h1>
               <p className="mt-2 text-smoke">We only use these to manage your appointment.</p>
               <div className="mt-6 grid gap-5 sm:grid-cols-2">
                 <div className="sm:col-span-2">
@@ -262,12 +262,12 @@ export function BookingWizard(props: {
                   <input id="website" tabIndex={-1} autoComplete="off" value={details.website} onChange={(e) => setDetails({ ...details, website: e.target.value })} />
                 </div>
               </div>
-              <div className="mt-6 rounded-md bg-mist px-4 py-3 text-sm text-char">
+              <div className="mt-6 border-l-2 border-brass bg-ivory px-4 py-3 text-sm text-char">
                 Your barber will approve the request, usually within a couple of hours. The time is held for you while you wait.
                 {props.cancellationPolicy && <span className="mt-1 block text-smoke">{props.cancellationPolicy}</span>}
               </div>
               <div className="mt-6 lg:hidden">{summary}</div>
-              <button type="submit" disabled={submitting || details.name.trim().length < 2 || details.phone.trim().length < 7} className="btn-gold mt-6 w-full py-3.5 text-base sm:w-auto sm:px-8">
+              <button type="submit" disabled={submitting || details.name.trim().length < 2 || details.phone.trim().length < 7} className="btn-gold btn-lg mt-6 w-full sm:w-auto">
                 {submitting ? "Sending request…" : "Request booking"}
               </button>
             </form>
@@ -275,9 +275,9 @@ export function BookingWizard(props: {
         </section>
 
         <aside className="hidden lg:block">
-          <div className="sticky top-24 rounded-lg border border-line p-5">
-            <h2 className="display mb-4 text-xl">Your booking</h2>
-            {summary}
+          <div className="sticky top-28 overflow-hidden border border-line bg-white">
+            <h2 className="display bg-ink px-5 py-4 text-xl text-white">Your booking</h2>
+            <div className="p-5">{summary}</div>
           </div>
         </aside>
       </div>
@@ -300,10 +300,10 @@ function Row({ label, value, onEdit }: { label: string; value: string; onEdit?: 
 function BarberOption({ selected, onClick, title, sub, face }: { selected: boolean; onClick: () => void; title: string; sub: string; face: React.ReactNode }) {
   return (
     <button type="button" onClick={onClick} aria-pressed={selected}
-      className={`flex items-center gap-4 rounded-lg border p-4 text-left transition-colors hover:border-ink ${selected ? "border-ink bg-mist" : "border-line"}`}>
+      className={`flex items-center gap-4 border p-5 text-left transition-colors hover:border-ink ${selected ? "border-ink bg-ivory" : "border-line bg-white"}`}>
       {face}
       <span>
-        <span className="block font-semibold">{title}</span>
+        <span className="display block text-xl">{title}</span>
         {sub && <span className="block text-sm text-smoke">{sub}</span>}
       </span>
     </button>
@@ -387,7 +387,7 @@ function TimePicker(p: {
 
   return (
     <>
-      <h1 ref={p.headingRef} tabIndex={-1} className="display text-3xl outline-none sm:text-4xl">Pick a time</h1>
+      <h1 ref={p.headingRef} tabIndex={-1} className="display text-4xl outline-none sm:text-5xl">Pick a time</h1>
       <p className="mt-2 text-smoke">{service.name} ({dur(service.duration_min)}) with {barberName ?? "any available barber"}.</p>
 
       {p.conflict && (

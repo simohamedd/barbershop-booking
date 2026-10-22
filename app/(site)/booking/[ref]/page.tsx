@@ -36,11 +36,11 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
   const emailOn = Boolean(a.email) && emailConfigured();
 
   return (
-    <div className="wrap max-w-2xl py-10 sm:py-14">
+    <div className="bg-ivory"><div className="wrap max-w-2xl py-12 sm:py-16">
       <p className="text-sm text-smoke">Booking reference</p>
       <p className="display text-3xl tracking-wide">{a.reference}</p>
 
-      <div className="mt-6 rounded-lg border border-line">
+      <div className="mt-6 border border-line bg-white">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
           <StatusBadge status={a.status} />
           {a.reschedule_requested && active && <span className="text-sm text-amber-800">Change requested, waiting for the shop</span>}
@@ -77,6 +77,6 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
         </div>
       )}
       {!active && <Link href="/book" className="btn-dark mt-8">Book again</Link>}
-    </div>
+    </div></div>
   );
 }

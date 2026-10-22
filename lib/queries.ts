@@ -33,6 +33,7 @@ export async function shopHours(): Promise<{ weekday: number; start: string; end
 
 /** Group weekly hours into display rows like "Mon – Fri  09:00 – 19:00". */
 export function hoursRows(hours: { weekday: number; start: string; end: string }[]) {
+  if (!hours.length) return []; // nothing configured yet: callers show "coming soon" instead of "Closed" every day
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const byDay = Array.from({ length: 7 }, (_, i) =>
     hours.filter((h) => h.weekday === i + 1).map((h) => `${h.start}–${h.end}`).join(", ") || "Closed",
@@ -80,6 +81,14 @@ export function openNow(hours: { weekday: number; start: string; end: string }[]
   const later = today.find((h) => toMinutes(h.start) > m);
   if (later) return { open: false, label: `Opens at ${later.start} today` };
   return { open: false, label: "Closed now" };
+}
+
+/** Today's hours as a short label, e.g. "09:00–19:00", or null when closed today. */
+export function todaysHours(hours: { weekday: number; start: string; end: string }[], zone: string) {
+  const wd = DateTime.now().setZone(zone).weekday;
+  const today = hours.filter((h) => h.weekday === wd);
+  if (!today.length) return null;
+  return `${today[0].start}–${today[today.length - 1].end}`;
 }
 
 export { minutesToHHMM };

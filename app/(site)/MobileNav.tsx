@@ -23,7 +23,7 @@ export function MobileNav({ items }: { items: { href: string; label: string }[] 
         </svg>
       </button>
       {open && (
-        <nav id="mobile-menu" aria-label="Mobile" className="absolute inset-x-0 top-16 border-b border-white/10 bg-ink px-4 pb-6 pt-2">
+        <nav id="mobile-menu" aria-label="Mobile" className="absolute inset-x-0 top-[72px] border-b border-white/10 bg-ink px-4 pb-6 pt-2">
           {items.map((i) => (
             <Link key={i.href} href={i.href} className="block border-b border-white/10 py-3.5 text-base text-white/85">{i.label}</Link>
           ))}

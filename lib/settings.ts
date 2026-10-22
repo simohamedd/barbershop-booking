@@ -21,6 +21,8 @@ export type Settings = {
   cancellation_cutoff_hours: number;
   cancellation_policy: string;
   allow_online_booking: boolean;
+  gallery_urls: string;
+  established_year: number | null;
 };
 
 export async function getSettings(db: Queryable = pool()): Promise<Settings> {

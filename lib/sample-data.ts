@@ -42,7 +42,7 @@ export async function loadSampleShop(c: PoolClient): Promise<string[]> {
       "hello@example.com",
       "+44 7700 900000",
       "https://maps.google.com/?q=Manchester",
-      "https://images.unsplash.com/photo-1621645582931-d1d3e6564943?auto=format&fit=crop&w=1800&q=70", // Unsplash, Joshua Lawrence
+      "", // empty = built-in default photo (lib/photos.ts)
       "Free cancellation up to 2 hours before your appointment. Please let us know if you're running late — after 10 minutes we may need to shorten or rebook your service.",
     ],
   );
