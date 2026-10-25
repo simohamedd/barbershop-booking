@@ -125,3 +125,59 @@ jobs:
       - name: Server log
         if: failure()
         run: cat server.log 2>/dev/null || echo "No server log (the app was never started)"
+
+  docker:
+    name: Docker image
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=sha,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      # Pull requests: build only (proves the Dockerfile works). Main: build and publish to ghcr.io.
+      - name: Build (and push on main)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runner
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test the image against Postgres
+        run: |
+          docker network create smoke
+          docker run -d --name db --network smoke -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=barbershop postgres:16-alpine
+          docker build --target tools -t barbershop-tools .
+          for i in $(seq 1 30); do docker exec db pg_isready -U postgres && break; sleep 1; done
+          docker run --rm --network smoke -e DATABASE_URL=postgres://postgres:postgres@db:5432/barbershop?sslmode=disable barbershop-tools
+          docker build --target runner -t barbershop-app .
+          docker run -d --name app --network smoke -p 3000:3000 \
+            -e DATABASE_URL=postgres://postgres:postgres@db:5432/barbershop?sslmode=disable \
+            -e APP_URL=http://localhost:3000 -e APP_SECRET=ci-only-secret-not-used-anywhere-else barbershop-app
+          for i in $(seq 1 30); do curl -fsS http://localhost:3000/api/health && exit 0; sleep 2; done
+          docker logs app; exit 1

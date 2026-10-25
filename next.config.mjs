@@ -3,6 +3,8 @@
 /** @type {import("next").NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
+  // Self-contained server bundle for the Docker image (Netlify builds without it)
+  output: process.env.BUILD_STANDALONE === "1" ? "standalone" : undefined,
   serverExternalPackages: ["pg"],
   images: { remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com" }] },
   async headers() {

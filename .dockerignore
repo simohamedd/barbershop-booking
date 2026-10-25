@@ -1,0 +1,12 @@
+node_modules
+.next
+.netlify
+.git
+.github
+.env
+.env*.local
+*.tsbuildinfo
+tests
+Dockerfile
+docker-compose.yml
+README.md
