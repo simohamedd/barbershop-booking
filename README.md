@@ -96,6 +96,29 @@ To reset the sample data: `npm run db:seed -- --force --demo` (this wipes appoin
 
 ---
 
+### Or run everything with Docker
+
+Needs Docker Desktop (or Docker Engine with Compose). No local Node or Postgres required.
+
+```bash
+docker compose --profile demo up --build   # app + Postgres + migrations + demo data
+# open http://localhost:3000   (demo logins: admin@example.com / demo-pass-2026)
+
+docker compose up --build                  # same, without demo data (use /setup with key local-setup-token-123456)
+docker compose down                        # stop;  add -v to also delete the database volume
+```
+
+The stack is:
+- `db`: Postgres 16 with a persistent volume
+- `migrate`: runs `db/migrations` once, then exits
+- `seed`: demo data, only with `--profile demo`
+- `app`: the production server, a multi-stage image running as a non-root user with a healthcheck on `/api/health`
+- `scheduler`: calls the expiry job every 5 minutes, like Netlify's scheduled function
+
+Override secrets with a `.env` file next to `docker-compose.yml` (`APP_SECRET=…`, `SETUP_TOKEN=…`).
+
+The CI workflow builds the image on every pull request and smoke-tests it against Postgres. On every merge to `main` it publishes `ghcr.io/simohamedd/barbershop-booking:latest`, so you can run the app on any Docker host (a VPS, Railway, Fly.io, Azure Container Apps…) with `DATABASE_URL`, `APP_URL` and `APP_SECRET` set.
+
 ## 2. Create the first admin account
 
 **On a live site (easiest):** open `https://<your-site>/setup`. Enter the setup key (the `SETUP_TOKEN` environment variable), your name, email and a password, and optionally tick *Add sample barbers, services and opening hours*. You're signed straight into the admin dashboard.

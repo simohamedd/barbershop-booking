@@ -1,0 +1,68 @@
+# Run the whole system locally:   docker compose up --build
+# With demo barbers, bookings and logins:   docker compose --profile demo up --build
+# Then open http://localhost:3000  (demo logins use the password demo-pass-2026)
+
+name: barbershop
+
+x-app-env: &app-env
+  DATABASE_URL: postgres://postgres:postgres@db:5432/barbershop?sslmode=disable
+  APP_URL: ${APP_URL:-http://localhost:3000}
+  APP_SECRET: ${APP_SECRET:-local-docker-secret-change-me-0123456789}
+  CRON_SECRET: ${CRON_SECRET:-local-docker-cron-secret}
+  SETUP_TOKEN: ${SETUP_TOKEN:-local-setup-token-123456}
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: barbershop
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    build: { context: ., target: tools }
+    environment: *app-env
+    command: ["npm", "run", "db:migrate"]
+    depends_on:
+      db: { condition: service_healthy }
+
+  seed:
+    profiles: [demo]
+    build: { context: ., target: tools }
+    environment: *app-env
+    command: ["npm", "run", "db:seed", "--", "--demo"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  app:
+    build: { context: ., target: runner }
+    environment: *app-env
+    ports:
+      - "3000:3000"
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    restart: unless-stopped
+
+  # Releases unapproved booking requests every 5 minutes (the job Netlify runs in production)
+  scheduler:
+    image: alpine:3.20
+    environment: *app-env
+    command: >
+      sh -c "apk add --no-cache curl >/dev/null &&
+             while true; do sleep 300;
+               curl -fsS -X POST -H \"Authorization: Bearer $$CRON_SECRET\" http://app:3000/api/cron/expire || true; echo;
+             done"
+    depends_on:
+      app: { condition: service_healthy }
+    restart: unless-stopped
+
+volumes:
+  pgdata:
