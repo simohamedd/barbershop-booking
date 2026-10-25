@@ -63,7 +63,7 @@ jobs:
         run: npm run build
 
       - name: Upload build for the e2e job
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: next-build
           path: |
