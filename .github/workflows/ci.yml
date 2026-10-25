@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Cancel superseded runs on the same branch / PR
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 22
+  DATABASE_URL: postgres://postgres:postgres@localhost:5432/barbershop?sslmode=disable
+  APP_URL: http://localhost:3000
+  APP_SECRET: ci-only-secret-not-used-anywhere-else
+  CRON_SECRET: ci-only-cron-secret
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  checks:
+    name: Type check, tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: barbershop
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Apply database migrations
+        run: npm run db:migrate
+
+      - name: Booking engine tests (real Postgres)
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+      - name: Upload build for the e2e job
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: |
+            .next
+            !.next/cache
+          include-hidden-files: true
+          retention-days: 1
+
+  e2e:
+    name: End-to-end browser tests
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: barbershop
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Download build
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next
+
+      - name: Prepare database with demo data
+        run: |
+          npm run db:migrate
+          npm run db:seed -- --demo
+
+      - name: Start the app
+        run: |
+          npm start > server.log 2>&1 &
+          npx --yes wait-on@8 --timeout 60000 http://localhost:3000/api/health
+
+      - name: Run end-to-end tests
+        run: npm run test:e2e
+
+      - name: Server log
+        if: failure()
+        run: cat server.log
