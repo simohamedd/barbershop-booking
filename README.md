@@ -1,5 +1,7 @@
 # Barbershop Booking & Management System
 
+[![CI](https://github.com/simohamedd/barbershop-booking/actions/workflows/ci.yml/badge.svg)](https://github.com/simohamedd/barbershop-booking/actions/workflows/ci.yml)
+
 A complete booking website and back office for a barbershop:
 
 - **Public website** with services and prices, barber profiles and hours, contact details, and a mobile-first booking flow that needs no customer account.
@@ -245,6 +247,22 @@ They cover: a customer books on a phone-sized screen and the booking is pending;
 **Customer asked for a different time:** their booking shows *Change requested* with their note. Reschedule it from the appointment page and they're notified.
 
 ---
+
+## Continuous integration
+
+Every pull request and every push to `main` runs the GitHub Actions workflow in `.github/workflows/ci.yml`:
+
+1. **Type check, tests and build:** `npm ci`, `tsc`, migrations, then the booking engine tests against a real Postgres 16 service container, then a production build.
+2. **End-to-end:** starts the built app against a fresh database with demo data, waits for `/api/health`, and runs the Playwright browser tests (`tests/e2e.mjs`).
+
+Recommended GitHub settings: **Settings → Branches → Add rule** for `main`, tick *Require status checks to pass* and select both CI jobs, so nothing reaches the live site without passing.
+
+Other repository tooling:
+
+- **Dependabot** (`.github/dependabot.yml`) opens weekly grouped pull requests for npm updates and monthly ones for GitHub Actions. Major Next.js and TypeScript upgrades are excluded because they need code changes.
+- **Templates** for pull requests and issues (bug report, feature request), and **CODEOWNERS**.
+- **Health check:** `GET /api/health` returns `200 {"status":"ok"}` when the app can reach the database, `503` otherwise. Point an uptime monitor (e.g. UptimeRobot, Better Stack) at it.
+- **Safe previews:** Netlify deploy previews and branch deploys build without running migrations (see `netlify.toml`), because they share the production `DATABASE_URL`. Migrations only run when a change is merged to `main`.
 
 ## Security notes
 

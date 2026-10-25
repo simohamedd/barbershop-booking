@@ -9,3 +9,12 @@
 # Next.js runtime is detected automatically (OpenNext adapter).
 [functions]
   directory = "netlify/functions"
+
+# Deploy previews share the production DATABASE_URL, so they must not run migrations:
+# a migration in an unmerged pull request would otherwise change the live database.
+# Production deploys (merges to main) apply migrations as usual.
+[context.deploy-preview]
+  command = "npm run build"
+
+[context.branch-deploy]
+  command = "npm run build"
