@@ -23,6 +23,7 @@ export type Settings = {
   allow_online_booking: boolean;
   gallery_urls: string;
   established_year: number | null;
+  reminder_hours_before: number;
 };
 
 export async function getSettings(db: Queryable = pool()): Promise<Settings> {

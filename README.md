@@ -236,6 +236,10 @@ Customers book without an account. They get a **booking reference** (e.g. `BK-7K
 
 ---
 
+## Appointment reminders
+
+Confirmed customers get one reminder by email and/or WhatsApp (whichever is set up) before their appointment. The default is 24 hours ahead; change it in **Settings → Booking rules → Send reminders (hours before)**, or set it to `0` to turn reminders off. The Netlify scheduled function `send-reminders` runs every 15 minutes (the Docker `scheduler` service does the same). Each appointment is reminded at most once, even if two runs overlap. Appointments starting within 30 minutes are skipped. Each attempt is logged on the appointment page like other customer messages.
+
 ## 7. Tests
 
 **Booking engine tests** run against a real Postgres database. They create and remove their own test barbers, so they're safe on a development database, but don't run them against production.
@@ -330,6 +334,5 @@ netlify/functions/     scheduled expiry job
 
 - **No online payments or deposits.** Customers pay in the shop. Stripe deposits could be added to the booking flow.
 - **SMS** isn't included. The notification layer (`lib/notify.ts`) is built to add another channel such as Twilio.
-- **Reminders** (e.g. 24 hours before) aren't sent yet. A second scheduled function using the same notification code would add them.
 - **Photos** are stored in the database as small images. For many large images, move them to object storage (e.g. Netlify Blobs or S3).
 - One location per installation. Several shops would need a `shop_id` on each table.
