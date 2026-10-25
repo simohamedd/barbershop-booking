@@ -37,7 +37,7 @@ export async function staffRecipients(barberId: string, includeAdmins: boolean, 
   return rows.map((r) => r.id);
 }
 
-export type CustomerEvent = "REQUESTED" | "CONFIRMED" | "REJECTED" | "CANCELLED" | "RESCHEDULED" | "EXPIRED";
+export type CustomerEvent = "REQUESTED" | "CONFIRMED" | "REJECTED" | "CANCELLED" | "RESCHEDULED" | "EXPIRED" | "REMINDER";
 
 /** Send customer-facing messages for an appointment event. Call AFTER the transaction commits. */
 export async function notifyCustomer(appointmentId: string, event: CustomerEvent, extra: { manageUrl?: string; reason?: string } = {}) {
@@ -56,6 +56,7 @@ export async function notifyCustomer(appointmentId: string, event: CustomerEvent
     CANCELLED: [`Booking cancelled – ${a.reference}`, `Your booking for ${a.service_name} on ${when} has been cancelled${extra.reason ? `: ${extra.reason}` : "."}`],
     RESCHEDULED: [`Booking changed – ${a.reference}`, `Your booking has been updated: ${a.service_name} with ${a.barber_name} on ${when}.`],
     EXPIRED: [`Booking request expired – ${a.reference}`, `Your request for ${when} wasn't approved in time, so the slot has been released. Please book another time.`],
+    REMINDER: [`Reminder: ${a.service_name} on ${when}`, `Hi ${a.customer_name}, a reminder of your ${a.service_name} with ${a.barber_name} on ${when}${s.address ? ` at ${s.address}` : ""}. Booking reference ${a.reference}. Need to change it? Find your booking at ${(process.env.APP_URL || "").replace(/\/$/, "")}/booking${s.phone ? ` or call ${s.phone}` : ""}.`],
   };
   const [title, text] = lines[event];
   const body = extra.manageUrl ? `${text}\n\nView or manage your booking: ${extra.manageUrl}` : text;

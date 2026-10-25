@@ -241,6 +241,7 @@ const RulesForm = z.object({
   min_notice_minutes: z.coerce.number().int().min(0).max(10080),
   max_advance_days: z.coerce.number().int().min(1).max(365),
   cancellation_cutoff_hours: z.coerce.number().int().min(0).max(168),
+  reminder_hours_before: z.coerce.number().int().min(0, "Reminder time can't be negative").max(168, "Reminders can be sent up to 168 hours (7 days) ahead"),
   cancellation_policy: z.string().trim().max(800),
 });
 
@@ -250,8 +251,8 @@ export async function saveBookingRules(_: R, fd: FormData): Promise<R> {
   if (!p.success) return { error: p.error.issues[0].message };
   const d = p.data;
   await q(`UPDATE shop_settings SET buffer_minutes=$1, slot_interval_minutes=$2, pending_expiry_minutes=$3, min_notice_minutes=$4, max_advance_days=$5,
-           cancellation_cutoff_hours=$6, cancellation_policy=$7, allow_online_booking=$8, updated_at=now() WHERE id=1`,
-    [d.buffer_minutes, d.slot_interval_minutes, d.pending_expiry_minutes, d.min_notice_minutes, d.max_advance_days, d.cancellation_cutoff_hours, d.cancellation_policy, fd.get("allow_online_booking") === "on"]);
+           cancellation_cutoff_hours=$6, cancellation_policy=$7, allow_online_booking=$8, reminder_hours_before=$9, updated_at=now() WHERE id=1`,
+    [d.buffer_minutes, d.slot_interval_minutes, d.pending_expiry_minutes, d.min_notice_minutes, d.max_advance_days, d.cancellation_cutoff_hours, d.cancellation_policy, fd.get("allow_online_booking") === "on", d.reminder_hours_before]);
   refresh();
   return { ok: "Booking rules saved. They apply to new bookings; existing ones keep their times." };
 }

@@ -40,6 +40,7 @@ export default async function Settings() {
             <F name="min_notice_minutes" label="Minimum notice (min)" def={s.min_notice_minutes} type="number" min={0} hint="Customers can't book later than this before a start time." />
             <F name="max_advance_days" label="Book up to (days ahead)" def={s.max_advance_days} type="number" min={1} max={365} />
             <F name="cancellation_cutoff_hours" label="Online cancellation closes (hours before)" def={s.cancellation_cutoff_hours} type="number" min={0} max={168} />
+            <F name="reminder_hours_before" label="Send reminders (hours before)" def={s.reminder_hours_before} type="number" min={0} max={168} hint="Confirmed customers get one reminder by email/WhatsApp (when set up). 0 turns reminders off." />
             <div className="sm:col-span-2 lg:col-span-3"><label className="label" htmlFor="s-pol">Cancellation policy shown to customers</label><textarea id="s-pol" name="cancellation_policy" rows={2} defaultValue={s.cancellation_policy} className="field" /></div>
             <label className="flex items-center gap-2 text-sm sm:col-span-2 lg:col-span-3"><input type="checkbox" name="allow_online_booking" defaultChecked={s.allow_online_booking} /> Accept online bookings (untick to pause; staff can still add bookings)</label>
             <div><Submit>Save booking rules</Submit></div>
